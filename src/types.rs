@@ -26,31 +26,27 @@ pub enum TypeName {
 pub struct Type<'a> {
     pub type_name: TypeName,
 
-    // Defensive: what this type takes from incoming attacks
-    pub resistances: &'a [TypeName], // 0.5x
-    pub immunities: &'a [TypeName],  // 0x
-    pub weaknesses: &'a [TypeName],  // 2x
+    pub resistances: &'a [TypeName],
+    pub immunities: &'a [TypeName],
+    pub weaknesses: &'a [TypeName],
 
-    // Offensive: what this type deals to defending types
-    pub v_effective: &'a [TypeName], // 2x
-    pub n_effective: &'a [TypeName], // 0.5x
-    pub no_effect: &'a [TypeName],   // 0x
+    pub v_effective: &'a [TypeName],
+    pub n_effective: &'a [TypeName],
+    pub no_effect: &'a [TypeName],
 }
 
-/// Defensive matchup breakdown for a dual-type Pokémon
 pub struct DualType {
     pub type_name: (TypeName, TypeName),
 
     // Defensive
-    pub quad_weakness: Vec<TypeName>,   // 4x
-    pub weakness: Vec<TypeName>,         // 2x
-    pub resistance: Vec<TypeName>,       // 0.5x
-    pub quad_resistance: Vec<TypeName>, // 0.25x
-    pub immunity: Vec<TypeName>,         // 0x
+    pub quad_weakness: Vec<TypeName>,
+    pub weakness: Vec<TypeName>,
+    pub resistance: Vec<TypeName>,
+    pub quad_resistance: Vec<TypeName>,
+    pub immunity: Vec<TypeName>,
 }
 
 impl<'a> Type<'a> {
-    /// Combine two defensive types to produce a DualType matchup table.
     pub fn eval_type(&self, second_type: &Type) -> DualType {
         let type1_resist: HashSet<TypeName> = self.resistances.iter().cloned().collect();
         let type1_immun: HashSet<TypeName> = self.immunities.iter().cloned().collect();
