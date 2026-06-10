@@ -1,8 +1,8 @@
-use crate::types::Type;
+use crate::types::DualType;
 
 pub struct PokemonBaseStats {
     pub name: String,
-    pub types: Type<'static>,
+    pub types: DualType,
     pub hp: u32,
     pub attack: u32,
     pub def: u32,
