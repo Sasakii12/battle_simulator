@@ -21,10 +21,27 @@ enum TypeName {
 
 struct Type<'a> {
     type_name: TypeName,
-    Resistance: &'a [TypeName],      // Fixed typo from "Resistence"
+    Resistance: &'a [TypeName],
     Immunities: &'a [TypeName],
-    V_Effective: &'a [TypeName],     // Very effective (2x damage)
-    N_Effective: &'a [TypeName],     // Not very effective (0.5x damage)
+    V_Effective: &'a [TypeName],
+    N_Effective: &'a [TypeName],
+}
+
+struct DualType<'a> {
+    type_name: (TypeName, TypeName),
+    Resistance: &'a [TypeName],
+    Immunities: &'a [TypeName],
+    V_Effective: &'a [TypeName],
+    N_Effective: &'a [TypeName],
+    E_EffectivVe: &'a [TypeName],
+    EN_EffectivVe: &'a [TypeName],
+}
+
+impl Type<'_> {
+    fn eval_type() -> DualType<'static> {
+
+        todo!();
+    }
 }
 
 const normal_name: TypeName = TypeName::Normal;
