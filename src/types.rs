@@ -35,7 +35,7 @@ pub struct Type<'a> {
     pub no_effect: &'a [TypeName],
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct DualType {
     pub type_name: (TypeName, TypeName),
 
