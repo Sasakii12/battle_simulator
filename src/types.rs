@@ -1,4 +1,4 @@
-enum TypeName {
+pub enum TypeName {
     Normal,
     Fire,
     Water,
@@ -19,7 +19,7 @@ enum TypeName {
     Fairy,
 }
 
-struct Type<'a> {
+pub struct Type<'a> {
     type_name: TypeName,
     Resistance: &'a [TypeName],
     Immunities: &'a [TypeName],
@@ -27,7 +27,7 @@ struct Type<'a> {
     N_Effective: &'a [TypeName],
 }
 
-struct DualType<'a> {
+pub struct DualType<'a> {
     type_name: (TypeName, TypeName),
     Resistance: &'a [TypeName],
     Immunities: &'a [TypeName],
@@ -38,7 +38,7 @@ struct DualType<'a> {
 }
 
 impl Type<'_> {
-    fn eval_type() -> DualType<'static> {
+    pub fn eval_type() -> DualType<'static> {
 
         todo!();
     }
@@ -95,7 +95,7 @@ const ELECTRIC: Type = Type {
     N_Effective: &[electric_name, flying_name, steel_name],
 };
 
-const GRASS: Type = Type {
+pub const GRASS: Type = Type {
     type_name: grass_name,
     Resistance: &[water_name, electric_name, grass_name, ground_name],
     Immunities: &[],

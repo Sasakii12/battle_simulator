@@ -1,10 +1,12 @@
 mod pokemon;
+mod types;
 use pokemon::{PokemonBaseStats, IVSpread, EVSpread};
+use types::{TypeName, Type, GRASS};
 
 fn main() {
     let meow_base = PokemonBaseStats  {
         name: String::from("Meowscarada"),
-        types: vec![String::from("Grass"), String::from("Dark")],
+        types: GRASS,
         hp: 76,
         attack: 110,
         def: 70,
