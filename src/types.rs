@@ -23,6 +23,7 @@ pub enum TypeName {
     NULL,
 }
 
+#[derive(Clone, Copy)]
 pub struct Type<'a> {
     pub type_name: TypeName,
 
