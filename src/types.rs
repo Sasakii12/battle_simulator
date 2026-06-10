@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TypeName {
     Normal,
     Fire,
@@ -17,274 +20,281 @@ pub enum TypeName {
     Dark,
     Steel,
     Fairy,
+    NULL,
 }
 
 pub struct Type<'a> {
-    type_name: TypeName,
+    pub type_name: TypeName,
+
+    // Defensive: what this type takes from incoming attacks
+    pub resistances: &'a [TypeName], // 0.5x
+    pub immunities: &'a [TypeName],  // 0x
+    pub weaknesses: &'a [TypeName],  // 2x
+
+    // Offensive: what this type deals to defending types
+    pub v_effective: &'a [TypeName], // 2x
+    pub n_effective: &'a [TypeName], // 0.5x
+    pub no_effect: &'a [TypeName],   // 0x
+}
+
+/// Defensive matchup breakdown for a dual-type Pokémon
+pub struct DualType {
+    pub type_name: (TypeName, TypeName),
 
     // Defensive
-    Resistances: &'a [TypeName],
-    Immunities: &'a [TypeName],
-    Weaknesses: &'a [TypeName],
-
-    // Offensive
-    V_Effective: &'a [TypeName],
-    N_Effective: &'a [TypeName],
-    NO_EFFECT: &'a [TypeName],
+    pub quad_weakness: Vec<TypeName>,   // 4x
+    pub weakness: Vec<TypeName>,         // 2x
+    pub resistance: Vec<TypeName>,       // 0.5x
+    pub quad_resistance: Vec<TypeName>, // 0.25x
+    pub immunity: Vec<TypeName>,         // 0x
 }
 
-pub struct DualType<'a> {
-    type_name: (TypeName, TypeName),
-    Resistance: &'a [TypeName],
-    Immunities: &'a [TypeName],
-    V_Effective: &'a [TypeName],
-    N_Effective: &'a [TypeName],
-    E_EffectivVe: &'a [TypeName],
-    EN_EffectivVe: &'a [TypeName],
-}
+impl<'a> Type<'a> {
+    /// Combine two defensive types to produce a DualType matchup table.
+    pub fn eval_type(&self, second_type: &Type) -> DualType {
+        let type1_resist: HashSet<TypeName> = self.resistances.iter().cloned().collect();
+        let type1_immun: HashSet<TypeName> = self.immunities.iter().cloned().collect();
+        let type1_weak: HashSet<TypeName> = self.weaknesses.iter().cloned().collect();
 
-impl Type<'_> {
-    pub fn eval_type() -> DualType<'static> {
+        let type2_resist: HashSet<TypeName> = second_type.resistances.iter().cloned().collect();
+        let type2_immun: HashSet<TypeName> = second_type.immunities.iter().cloned().collect();
+        let type2_weak: HashSet<TypeName> = second_type.weaknesses.iter().cloned().collect();
 
-        todo!();
+        let all_types = [
+            TypeName::Normal, TypeName::Fire, TypeName::Water, TypeName::Electric,
+            TypeName::Grass, TypeName::Ice, TypeName::Fighting, TypeName::Poison,
+            TypeName::Ground, TypeName::Flying, TypeName::Psychic, TypeName::Bug,
+            TypeName::Rock, TypeName::Ghost, TypeName::Dragon, TypeName::Dark,
+            TypeName::Steel, TypeName::Fairy,
+        ];
+
+        let mut quad_weakness = Vec::new();
+        let mut weakness = Vec::new();
+        let mut resistance = Vec::new();
+        let mut quad_resistance = Vec::new();
+        let mut immunity = Vec::new();
+
+        for &atk in &all_types {
+            // Immunity overrides everything
+            if type1_immun.contains(&atk) || type2_immun.contains(&atk) {
+                immunity.push(atk);
+                continue;
+            }
+
+            let mut multiplier = 1.0_f32;
+
+            if type1_weak.contains(&atk)   { multiplier *= 2.0; }
+            if type2_weak.contains(&atk)   { multiplier *= 2.0; }
+            if type1_resist.contains(&atk) { multiplier *= 0.5; }
+            if type2_resist.contains(&atk) { multiplier *= 0.5; }
+
+            // Use epsilon comparison for floats
+            if (multiplier - 4.0).abs() < f32::EPSILON {
+                quad_weakness.push(atk);
+            } else if (multiplier - 2.0).abs() < f32::EPSILON {
+                weakness.push(atk);
+            } else if (multiplier - 0.5).abs() < f32::EPSILON {
+                resistance.push(atk);
+            } else if (multiplier - 0.25).abs() < f32::EPSILON {
+                quad_resistance.push(atk);
+            }
+            // 1.0 = neutral, skip
+        }
+
+        DualType {
+            type_name: (self.type_name, second_type.type_name),
+            quad_weakness,
+            weakness,
+            resistance,
+            quad_resistance,
+            immunity,
+        }
     }
 }
 
-const normal_name: TypeName = TypeName::Normal;
-const fire_name: TypeName = TypeName::Fire;
-const water_name: TypeName = TypeName::Water;
-const electric_name: TypeName = TypeName::Electric;
-const grass_name: TypeName = TypeName::Grass;
-const ice_name: TypeName = TypeName::Ice;
-const fighting_name: TypeName = TypeName::Fighting;
-const poison_name: TypeName = TypeName::Poison;
-const ground_name: TypeName = TypeName::Ground;
-const flying_name: TypeName = TypeName::Flying;
-const psychic_name: TypeName = TypeName::Psychic;
-const bug_name: TypeName = TypeName::Bug;
-const rock_name: TypeName = TypeName::Rock;
-const ghost_name: TypeName = TypeName::Ghost;
-const dragon_name: TypeName = TypeName::Dragon;
-const dark_name: TypeName = TypeName::Dark;
-const steel_name: TypeName = TypeName::Steel;
-const fairy_name: TypeName = TypeName::Fairy;
+// ── Type chart data ──────────────────────────────────────────────────────────
+// Source: Gen 6+ type chart (Fairy added, Steel lost Ghost/Dark resistances)
 
-const NORMAL: Type = Type {
-    type_name: normal_name,
-    // Defensive
-    Resistances: &[],
-    Immunities: &[ghost_name],
-    Weaknesses: &[fighting_name],
-    // Offensive
-    V_Effective: &[],
-    N_Effective: &[rock_name, steel_name],
-    NO_EFFECT: &[ghost_name],
+pub static NORMAL: Type<'static> = Type {
+    type_name: TypeName::Normal,
+    weaknesses:  &[TypeName::Fighting],
+    resistances: &[],
+    immunities:  &[TypeName::Ghost],
+    v_effective: &[],
+    n_effective: &[TypeName::Rock, TypeName::Steel],
+    no_effect:   &[TypeName::Ghost],
 };
 
-const FIRE: Type = Type {
-    type_name: fire_name,
-    // Defensive
-    Resistances: &[fire_name, grass_name, ice_name, bug_name, steel_name, fairy_name],
-    Immunities: &[],
-    Weaknesses: &[water_name, ground_name, rock_name],
-    // Offensive
-    V_Effective: &[grass_name, ice_name, bug_name, steel_name],
-    N_Effective: &[fire_name, water_name, rock_name, dragon_name],
-    NO_EFFECT: &[],
+pub static FIRE: Type<'static> = Type {
+    type_name: TypeName::Fire,
+    weaknesses:  &[TypeName::Water, TypeName::Ground, TypeName::Rock],
+    resistances: &[TypeName::Fire, TypeName::Grass, TypeName::Ice, TypeName::Bug, TypeName::Steel, TypeName::Fairy],
+    immunities:  &[],
+    v_effective: &[TypeName::Grass, TypeName::Ice, TypeName::Bug, TypeName::Steel],
+    n_effective: &[TypeName::Fire, TypeName::Water, TypeName::Rock, TypeName::Dragon],
+    no_effect:   &[],
 };
 
-const WATER: Type = Type {
-    type_name: water_name,
-    // Defensive
-    Resistances: &[fire_name, water_name, ice_name, steel_name],
-    Immunities: &[],
-    Weaknesses: &[electric_name, grass_name],
-    // Offensive
-    V_Effective: &[fire_name, ground_name, rock_name],
-    N_Effective: &[water_name, grass_name, dragon_name],
-    NO_EFFECT: &[],
+pub static WATER: Type<'static> = Type {
+    type_name: TypeName::Water,
+    weaknesses:  &[TypeName::Electric, TypeName::Grass],
+    resistances: &[TypeName::Fire, TypeName::Water, TypeName::Ice, TypeName::Steel],
+    immunities:  &[],
+    v_effective: &[TypeName::Fire, TypeName::Ground, TypeName::Rock],
+    n_effective: &[TypeName::Water, TypeName::Grass, TypeName::Dragon],
+    no_effect:   &[],
 };
 
-const ELECTRIC: Type = Type {
-    type_name: electric_name,
-    // Defensive
-    Resistances: &[electric_name, flying_name, steel_name],
-    Immunities: &[],
-    Weaknesses: &[ground_name],
-    // Offensive
-    V_Effective: &[water_name, flying_name],
-    N_Effective: &[electric_name, grass_name, dragon_name],
-    NO_EFFECT: &[ground_name],
+pub static ELECTRIC: Type<'static> = Type {
+    type_name: TypeName::Electric,
+    weaknesses:  &[TypeName::Ground],
+    resistances: &[TypeName::Electric, TypeName::Flying, TypeName::Steel],
+    immunities:  &[],
+    v_effective: &[TypeName::Water, TypeName::Flying],
+    n_effective: &[TypeName::Electric, TypeName::Grass, TypeName::Dragon],
+    no_effect:   &[TypeName::Ground],
 };
 
-pub const GRASS: Type = Type {
-    type_name: grass_name,
-    // Defensive
-    Resistances: &[water_name, electric_name, grass_name, ground_name],
-    Immunities: &[],
-    Weaknesses: &[fire_name, ice_name, poison_name, flying_name, bug_name],
-    // Offensive
-    V_Effective: &[water_name, ground_name, rock_name],
-    N_Effective: &[fire_name, grass_name, poison_name, flying_name, bug_name, dragon_name, steel_name],
-    NO_EFFECT: &[],
+pub static GRASS: Type<'static> = Type {
+    type_name: TypeName::Grass,
+    weaknesses:  &[TypeName::Fire, TypeName::Ice, TypeName::Poison, TypeName::Flying, TypeName::Bug],
+    resistances: &[TypeName::Water, TypeName::Electric, TypeName::Grass, TypeName::Ground],
+    immunities:  &[],
+    v_effective: &[TypeName::Water, TypeName::Ground, TypeName::Rock],
+    n_effective: &[TypeName::Fire, TypeName::Grass, TypeName::Poison, TypeName::Flying, TypeName::Bug, TypeName::Dragon, TypeName::Steel],
+    no_effect:   &[],
 };
 
-const ICE: Type = Type {
-    type_name: ice_name,
-    // Defensive
-    Resistances: &[ice_name],
-    Immunities: &[],
-    Weaknesses: &[fire_name, fighting_name, rock_name, steel_name],
-    // Offensive
-    V_Effective: &[flying_name, ground_name, grass_name, dragon_name],
-    N_Effective: &[fire_name, water_name, ice_name, steel_name],
-    NO_EFFECT: &[],
+pub static ICE: Type<'static> = Type {
+    type_name: TypeName::Ice,
+    weaknesses:  &[TypeName::Fire, TypeName::Fighting, TypeName::Rock, TypeName::Steel],
+    resistances: &[TypeName::Ice],
+    immunities:  &[],
+    v_effective: &[TypeName::Grass, TypeName::Ground, TypeName::Flying, TypeName::Dragon],
+    n_effective: &[TypeName::Fire, TypeName::Water, TypeName::Ice, TypeName::Steel],
+    no_effect:   &[],
 };
 
-const FIGHTING: Type = Type {
-    type_name: fighting_name,
-    // Defensive
-    Resistances: &[bug_name, rock_name, dark_name],
-    Immunities: &[ghost_name],
-    Weaknesses: &[flying_name, psychic_name, fairy_name],
-    // Offensive
-    V_Effective: &[normal_name, ice_name, rock_name, dark_name, steel_name],
-    N_Effective: &[poison_name, flying_name, psychic_name, bug_name, fairy_name],
-    NO_EFFECT: &[ghost_name],
+pub static FIGHTING: Type<'static> = Type {
+    type_name: TypeName::Fighting,
+    weaknesses:  &[TypeName::Flying, TypeName::Psychic, TypeName::Fairy],
+    resistances: &[TypeName::Bug, TypeName::Rock, TypeName::Dark],
+    immunities:  &[],
+    v_effective: &[TypeName::Normal, TypeName::Ice, TypeName::Rock, TypeName::Dark, TypeName::Steel],
+    n_effective: &[TypeName::Poison, TypeName::Bug, TypeName::Psychic, TypeName::Flying, TypeName::Fairy],
+    no_effect:   &[TypeName::Ghost],
 };
 
-const POISON: Type = Type {
-    type_name: poison_name,
-    // Defensive
-    Resistances: &[fighting_name, poison_name, bug_name, grass_name, fairy_name],
-    Immunities: &[steel_name],
-    Weaknesses: &[ground_name, psychic_name],
-    // Offensive
-    V_Effective: &[grass_name, fairy_name],
-    N_Effective: &[poison_name, ground_name, rock_name, ghost_name, steel_name],
-    NO_EFFECT: &[steel_name],
+pub static POISON: Type<'static> = Type {
+    type_name: TypeName::Poison,
+    weaknesses:  &[TypeName::Ground, TypeName::Psychic],
+    resistances: &[TypeName::Grass, TypeName::Fighting, TypeName::Poison, TypeName::Bug, TypeName::Fairy],
+    immunities:  &[],
+    v_effective: &[TypeName::Grass, TypeName::Fairy],
+    n_effective: &[TypeName::Poison, TypeName::Ground, TypeName::Rock, TypeName::Ghost],
+    no_effect:   &[TypeName::Steel],
 };
 
-const GROUND: Type = Type {
-    type_name: ground_name,
-    // Defensive
-    Resistances: &[poison_name, rock_name],
-    Immunities: &[electric_name],
-    Weaknesses: &[water_name, grass_name, ice_name],
-    // Offensive
-    V_Effective: &[fire_name, electric_name, poison_name, rock_name, steel_name],
-    N_Effective: &[grass_name, bug_name],
-    NO_EFFECT: &[flying_name],
+pub static GROUND: Type<'static> = Type {
+    type_name: TypeName::Ground,
+    weaknesses:  &[TypeName::Water, TypeName::Grass, TypeName::Ice],
+    resistances: &[TypeName::Poison, TypeName::Rock],
+    immunities:  &[TypeName::Electric],
+    v_effective: &[TypeName::Fire, TypeName::Electric, TypeName::Poison, TypeName::Rock, TypeName::Steel],
+    n_effective: &[TypeName::Grass, TypeName::Bug],
+    no_effect:   &[TypeName::Flying],
 };
 
-const FLYING: Type = Type {
-    type_name: flying_name,
-    // Defensive
-    Resistances: &[fighting_name, bug_name, grass_name],
-    Immunities: &[ground_name],
-    Weaknesses: &[electric_name, ice_name, rock_name],
-    // Offensive
-    V_Effective: &[grass_name, fighting_name, bug_name],
-    N_Effective: &[electric_name, rock_name, steel_name],
-    NO_EFFECT: &[],
+pub static FLYING: Type<'static> = Type {
+    type_name: TypeName::Flying,
+    weaknesses:  &[TypeName::Electric, TypeName::Ice, TypeName::Rock],
+    resistances: &[TypeName::Grass, TypeName::Fighting, TypeName::Bug],
+    immunities:  &[TypeName::Ground],
+    v_effective: &[TypeName::Grass, TypeName::Fighting, TypeName::Bug],
+    n_effective: &[TypeName::Electric, TypeName::Rock, TypeName::Steel],
+    no_effect:   &[],
 };
 
-const PSYCHIC: Type = Type {
-    type_name: psychic_name,
-    // Defensive
-    Resistances: &[fighting_name, psychic_name],
-    Immunities: &[],
-    Weaknesses: &[bug_name, ghost_name, dark_name],
-    // Offensive
-    V_Effective: &[fighting_name, poison_name],
-    N_Effective: &[psychic_name, steel_name],
-    NO_EFFECT: &[dark_name],
+pub static PSYCHIC: Type<'static> = Type {
+    type_name: TypeName::Psychic,
+    weaknesses:  &[TypeName::Bug, TypeName::Ghost, TypeName::Dark],
+    resistances: &[TypeName::Fighting, TypeName::Psychic],
+    immunities:  &[],
+    v_effective: &[TypeName::Fighting, TypeName::Poison],
+    n_effective: &[TypeName::Psychic, TypeName::Steel],
+    no_effect:   &[TypeName::Dark],
 };
 
-const BUG: Type = Type {
-    type_name: bug_name,
-    // Defensive
-    Resistances: &[fighting_name, ground_name, grass_name],
-    Immunities: &[],
-    Weaknesses: &[fire_name, flying_name, rock_name],
-    // Offensive
-    V_Effective: &[grass_name, psychic_name, dark_name],
-    N_Effective: &[fire_name, fighting_name, poison_name, flying_name, ghost_name, steel_name, fairy_name],
-    NO_EFFECT: &[],
+pub static BUG: Type<'static> = Type {
+    type_name: TypeName::Bug,
+    weaknesses:  &[TypeName::Fire, TypeName::Flying, TypeName::Rock],
+    resistances: &[TypeName::Grass, TypeName::Fighting, TypeName::Ground],
+    immunities:  &[],
+    v_effective: &[TypeName::Grass, TypeName::Psychic, TypeName::Dark],
+    n_effective: &[TypeName::Fire, TypeName::Fighting, TypeName::Poison, TypeName::Flying, TypeName::Ghost, TypeName::Steel, TypeName::Fairy],
+    no_effect:   &[],
 };
 
-const ROCK: Type = Type {
-    type_name: rock_name,
-    // Defensive
-    Resistances: &[normal_name, fire_name, poison_name, flying_name],
-    Immunities: &[],
-    Weaknesses: &[water_name, grass_name, fighting_name, ground_name, steel_name],
-    // Offensive
-    V_Effective: &[fire_name, ice_name, flying_name, bug_name],
-    N_Effective: &[fighting_name, ground_name, steel_name],
-    NO_EFFECT: &[],
+pub static ROCK: Type<'static> = Type {
+    type_name: TypeName::Rock,
+    weaknesses:  &[TypeName::Water, TypeName::Grass, TypeName::Fighting, TypeName::Ground, TypeName::Steel],
+    resistances: &[TypeName::Normal, TypeName::Fire, TypeName::Poison, TypeName::Flying],
+    immunities:  &[],
+    v_effective: &[TypeName::Fire, TypeName::Ice, TypeName::Flying, TypeName::Bug],
+    n_effective: &[TypeName::Fighting, TypeName::Ground, TypeName::Steel],
+    no_effect:   &[],
 };
 
-const GHOST: Type = Type {
-    type_name: ghost_name,
-    // Defensive
-    Resistances: &[poison_name, bug_name],
-    Immunities: &[normal_name, fighting_name],
-    Weaknesses: &[ghost_name, dark_name],
-    // Offensive
-    V_Effective: &[psychic_name, ghost_name],
-    N_Effective: &[dark_name, steel_name],
-    NO_EFFECT: &[normal_name],
+pub static GHOST: Type<'static> = Type {
+    type_name: TypeName::Ghost,
+    weaknesses:  &[TypeName::Ghost, TypeName::Dark],
+    resistances: &[TypeName::Poison, TypeName::Bug],
+    immunities:  &[TypeName::Normal, TypeName::Fighting],
+    v_effective: &[TypeName::Psychic, TypeName::Ghost],
+    n_effective: &[TypeName::Dark],
+    no_effect:   &[TypeName::Normal],
 };
 
-const DRAGON: Type = Type {
-    type_name: dragon_name,
-    // Defensive
-    Resistances: &[fire_name, water_name, electric_name, grass_name],
-    Immunities: &[],
-    Weaknesses: &[ice_name, dragon_name, fairy_name],
-    // Offensive
-    V_Effective: &[dragon_name],
-    N_Effective: &[steel_name],
-    NO_EFFECT: &[fairy_name],
+pub static DRAGON: Type<'static> = Type {
+    type_name: TypeName::Dragon,
+    weaknesses:  &[TypeName::Ice, TypeName::Dragon, TypeName::Fairy],
+    resistances: &[TypeName::Fire, TypeName::Water, TypeName::Electric, TypeName::Grass],
+    immunities:  &[],
+    v_effective: &[TypeName::Dragon],
+    n_effective: &[TypeName::Steel],
+    no_effect:   &[TypeName::Fairy],
 };
 
-const DARK: Type = Type {
-    type_name: dark_name,
-    // Defensive
-    Resistances: &[ghost_name, dark_name],
-    Immunities: &[psychic_name],
-    Weaknesses: &[fighting_name, bug_name, fairy_name],
-    // Offensive
-    V_Effective: &[psychic_name, ghost_name],
-    N_Effective: &[fighting_name, dark_name, fairy_name],
-    NO_EFFECT: &[],
+pub static DARK: Type<'static> = Type {
+    type_name: TypeName::Dark,
+    weaknesses:  &[TypeName::Fighting, TypeName::Bug, TypeName::Fairy],
+    resistances: &[TypeName::Ghost, TypeName::Dark],
+    immunities:  &[TypeName::Psychic],
+    v_effective: &[TypeName::Psychic, TypeName::Ghost],
+    n_effective: &[TypeName::Fighting, TypeName::Dark, TypeName::Fairy],
+    no_effect:   &[],
 };
 
-const STEEL: Type = Type {
-    type_name: steel_name,
-    // Defensive
-    Resistances: &[
-        normal_name, grass_name, ice_name, flying_name,
-        psychic_name, bug_name, rock_name, dragon_name,
-        steel_name, fairy_name
+pub static STEEL: Type<'static> = Type {
+    type_name: TypeName::Steel,
+    weaknesses:  &[TypeName::Fire, TypeName::Fighting, TypeName::Ground],
+    resistances: &[
+        TypeName::Normal, TypeName::Grass, TypeName::Ice, TypeName::Flying,
+        TypeName::Psychic, TypeName::Bug, TypeName::Rock, TypeName::Dragon,
+        TypeName::Steel, TypeName::Fairy,
     ],
-    Immunities: &[poison_name],
-    Weaknesses: &[fire_name, fighting_name, ground_name],
-    // Offensive
-    V_Effective: &[ice_name, rock_name, fairy_name],
-    N_Effective: &[fire_name, water_name, electric_name, steel_name],
-    NO_EFFECT: &[],
+    immunities:  &[TypeName::Poison],
+    v_effective: &[TypeName::Ice, TypeName::Rock, TypeName::Fairy],
+    n_effective: &[TypeName::Fire, TypeName::Water, TypeName::Electric, TypeName::Steel],
+    no_effect:   &[],
 };
 
-const FAIRY: Type = Type {
-    type_name: fairy_name,
-    // Defensive
-    Resistances: &[fighting_name, bug_name, dark_name],
-    Immunities: &[dragon_name],
-    Weaknesses: &[poison_name, steel_name],
-    // Offensive
-    V_Effective: &[fighting_name, dragon_name, dark_name],
-    N_Effective: &[fire_name, poison_name, steel_name],
-    NO_EFFECT: &[],
+pub static FAIRY: Type<'static> = Type {
+    type_name: TypeName::Fairy,
+    weaknesses:  &[TypeName::Poison, TypeName::Steel],
+    resistances: &[TypeName::Fighting, TypeName::Bug, TypeName::Dark],
+    immunities:  &[TypeName::Dragon],
+    v_effective: &[TypeName::Fighting, TypeName::Dragon, TypeName::Dark],
+    n_effective: &[TypeName::Fire, TypeName::Poison, TypeName::Steel],
+    no_effect:   &[],
 };
