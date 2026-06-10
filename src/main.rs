@@ -1,6 +1,7 @@
 mod pokemon;
 mod types;
 mod moves;
+mod damage;
 use pokemon::{PokemonBaseStats, IVSpread, EVSpread};
 use types::{TypeName, Type, GRASS, DARK};
 
