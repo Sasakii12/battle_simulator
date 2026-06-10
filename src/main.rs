@@ -1,12 +1,13 @@
 mod pokemon;
 mod types;
+mod moves;
 use pokemon::{PokemonBaseStats, IVSpread, EVSpread};
-use types::{TypeName, Type, GRASS};
+use types::{TypeName, Type, GRASS, DARK};
 
 fn main() {
     let meow_base = PokemonBaseStats  {
         name: String::from("Meowscarada"),
-        types: GRASS,
+        types: GRASS.eval_type(&DARK),
         hp: 76,
         attack: 110,
         def: 70,
@@ -18,5 +19,5 @@ fn main() {
     let meow_ev = EVSpread { hp: 0, attack: 0, def: 0, spatk: 0, spdef: 0, speed: 0};
     let meow = meow_base.evaluate(meow_iv, meow_ev);
     println!("Hello, world!");
-    println!("{}", meow.base_stats.def);
+    println!("{:?}", meow.base_stats.types);
 }
