@@ -31,7 +31,7 @@ pub const FLOWER_TRICK: Move = Move {
     always_crit: true,
 };
 
-const HYPER_VOICE: Move = Move {
+pub const HYPER_VOICE: Move = Move {
     move_type: NORMAL,
     base_power: 90,
     category: Category::Special,
@@ -40,7 +40,8 @@ const HYPER_VOICE: Move = Move {
     pp: 10,
     always_crit: false,
 };
-const PYRO_BALL: Move = Move {
+
+pub const PYRO_BALL: Move = Move {
     move_type: FIRE,
     base_power: 120,
     category: Category::Physical,
