@@ -5,7 +5,7 @@ pub enum Category {
     Special,
 }
 
-enum Accuracy {
+pub enum Accuracy {
     Acc(f32),
     Full,
 }
@@ -38,5 +38,14 @@ const HYPER_VOICE: Move = Move {
     accuracy: Accuracy::Acc(100.),
     priority: 0,
     pp: 10,
+    always_crit: false,
+};
+const PYRO_BALL: Move = Move {
+    move_type: FIRE,
+    base_power: 120,
+    category: Category::Physical,
+    accuracy: Accuracy::Acc(90.),
+    priority: 0,
+    pp: 5,
     always_crit: false,
 };
