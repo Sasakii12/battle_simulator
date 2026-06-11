@@ -1,6 +1,6 @@
 use crate::types::*;
 
-enum Category {
+pub enum Category {
     Physical,
     Special,
 }
