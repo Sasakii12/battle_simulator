@@ -56,4 +56,3 @@ pub fn damage(attacker: Pokemon, defender: Pokemon, attacking_move: Move) -> i32
     round
 }
 
-pub fn battle_loop() {}

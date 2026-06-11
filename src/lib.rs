@@ -3,3 +3,4 @@ pub mod types;
 pub mod moves;
 mod damage;
 
+pub fn battle_loop() {}
