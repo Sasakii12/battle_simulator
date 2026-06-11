@@ -17,6 +17,7 @@ struct Move {
     accuracy: Accuracy,
     priority: u32,
     pp: u32,
+    always_crit: bool,
 }
 
 
@@ -27,4 +28,15 @@ const FLOWER_TRICK: Move = Move {
     accuracy: Accuracy::Full,
     priority: 0,
     pp: 10,
+    always_crit: true,
+};
+
+const HYPER_VOICE: Move = Move {
+    move_type: NORMAL,
+    base_power: 90,
+    category: Category::Special,
+    accuracy: Accuracy::Acc(100),
+    priority: 0,
+    pp: 10,
+    always_crit: false,
 };
