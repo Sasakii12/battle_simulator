@@ -21,7 +21,7 @@ pub struct Move {
 }
 
 
-const FLOWER_TRICK: Move = Move {
+pub const FLOWER_TRICK: Move = Move {
     move_type: GRASS,
     base_power: 70,
     category: Category::Physical,
