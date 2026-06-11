@@ -10,14 +10,14 @@ enum Accuracy {
     Full,
 }
 
-struct Move {
-    move_type: Type<'static>,
-    base_power: u32,
-    category: Category,
-    accuracy: Accuracy,
-    priority: u32,
-    pp: u32,
-    always_crit: bool,
+pub struct Move {
+    pub move_type: Type<'static>,
+    pub base_power: u32,
+    pub category: Category,
+    pub accuracy: Accuracy,
+    pub priority: u32,
+    pub pp: u32,
+    pub always_crit: bool,
 }
 
 
