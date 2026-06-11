@@ -41,7 +41,7 @@ pub struct EVSpread {
     }
 
 impl PokemonBaseStats {
-    pub fn evaluate(self, iv : IVSpread, ev: EVSpread) -> Pokemon {
+    pub fn evaluate(self, iv : IVSpread, ev: EVSpread, moves: Vec<Move>) -> Pokemon {
         let hp = (((2 * self.hp + iv.hp + ((ev.hp as f32 / 4.).floor() as u32)) as f32 * 100.) / 100.).floor() as u32 + 100 + 10;
         let def = stat(self.def, iv.def, ev.def);
         let attack = stat(self.attack, iv.attack, ev.attack);
@@ -52,7 +52,7 @@ impl PokemonBaseStats {
         Pokemon {
                 base_stats: PokemonBaseStats{name: self.name, types: self.types, hp,attack,def,spatk,spdef,speed},
                 nature: String::from("e"),
-                moves: vec![FLOWER_TRICK]
+                moves
         }
     } 
 }
