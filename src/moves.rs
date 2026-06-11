@@ -6,7 +6,7 @@ enum Category {
 }
 
 enum Accuracy {
-    Acc(u32),
+    Acc(f32),
     Full,
 }
 
@@ -35,7 +35,7 @@ const HYPER_VOICE: Move = Move {
     move_type: NORMAL,
     base_power: 90,
     category: Category::Special,
-    accuracy: Accuracy::Acc(100),
+    accuracy: Accuracy::Acc(100.),
     priority: 0,
     pp: 10,
     always_crit: false,
