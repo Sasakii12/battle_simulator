@@ -1,4 +1,5 @@
 use crate::types::DualType;
+use crate::moves::{FLOWER_TRICK, Move};
 
 pub struct PokemonBaseStats {
     pub name: String,
@@ -14,6 +15,7 @@ pub struct PokemonBaseStats {
 pub struct Pokemon {
     pub base_stats: PokemonBaseStats,
     pub nature: String,
+    pub moves: Vec<Move>,
 }
 
 pub struct IVSpread {
@@ -49,7 +51,8 @@ impl PokemonBaseStats {
 
         Pokemon {
                 base_stats: PokemonBaseStats{name: self.name, types: self.types, hp,attack,def,spatk,spdef,speed},
-                nature: String::from("e")
+                nature: String::from("e"),
+                moves: vec![FLOWER_TRICK]
         }
     } 
 }
