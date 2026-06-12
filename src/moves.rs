@@ -1,15 +1,18 @@
 use crate::types::*;
 
+#[derive(Clone)]
 pub enum Category {
     Physical,
     Special,
 }
 
+#[derive(Clone)]
 pub enum Accuracy {
     Acc(f32),
     Full,
 }
 
+#[derive(Clone)]
 pub struct Move {
     pub move_type: Type<'static>,
     pub base_power: u32,

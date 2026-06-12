@@ -2,10 +2,11 @@ mod pokemon;
 mod types;
 mod moves;
 mod damage;
-use pokemon::{PokemonBaseStats, IVSpread, EVSpread};
-use types::{TypeName, Type, GRASS, DARK, NORMAL, FIRE};
-use moves::*;
-use damage::*;
+use battle_simulator::battle_loop;
+use battle_simulator::pokemon::{PokemonBaseStats, IVSpread, EVSpread, Pokemon};
+use battle_simulator::types::{TypeName, Type, GRASS, DARK, NORMAL, FIRE};
+use battle_simulator::moves::*;
+use battle_simulator::damage::*;
 
 fn main() {
     let meow_base = PokemonBaseStats  {
@@ -41,5 +42,6 @@ fn main() {
     println!("{:?}", meow.base_stats.types);
     println!("{:?}", cinder.base_stats.types);
     println!("{:?}", meow.moves[0].move_type.type_name);
-    println!("{}", damage::damage(meow, cinder, moves::FLOWER_TRICK));
+    println!("{}", battle_simulator::damage::damage(meow.clone(), cinder.clone(), FLOWER_TRICK));
+    battle_loop(meow, cinder);
 }

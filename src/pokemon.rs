@@ -1,6 +1,7 @@
 use crate::types::DualType;
 use crate::moves::{FLOWER_TRICK, Move};
 
+#[derive(Clone)]
 pub struct PokemonBaseStats {
     pub name: String,
     pub types: DualType,
@@ -12,6 +13,7 @@ pub struct PokemonBaseStats {
     pub speed: u32,
 }
 
+#[derive(Clone)]
 pub struct Pokemon {
     pub base_stats: PokemonBaseStats,
     pub nature: String,
